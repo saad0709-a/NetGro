@@ -1,900 +1,558 @@
-// EduConnect - LinkedIn-style Educational Social App
-// Simplified JavaScript for compatibility
+/* ===========================
+   NetGRO — LinkedIn-lite Demo (ER-aware) + Theme switch
+   =========================== */
 
-// Mock Data
-var mockUsers = [
-  {
-    userId: "u-001",
-    name: "Arjun Sharma",
-    email: "arjun.sharma@example.com",
-    bio: "Final year ECE student at Delhi Technological University. Passionate about IoT and embedded systems.",
-    profileId: "p-001"
-  },
-  {
-    userId: "u-002",
-    name: "Priya Patel", 
-    email: "priya.patel@example.com",
-    bio: "Computer Science Engineering student at IIT Delhi. Interested in AI/ML and software development.",
-    profileId: "p-002"
-  },
-  {
-    userId: "u-003",
-    name: "Rohit Kumar",
-    email: "rohit.kumar@example.com", 
-    bio: "Mechanical Engineering graduate from NIT Kurukshetra. Currently working as a Design Engineer.",
-    profileId: "p-003"
-  }
-];
+// ---------- Helpers ----------
+const qs  = (sel, root = document) => root.querySelector(sel);
+const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
+const $id = (id) => document.getElementById(id);
 
-var mockProfiles = [
-  {
-    profileId: "p-001",
-    userId: "u-001",
-    headline: "ECE Student | IoT Enthusiast | Arduino Projects",
-    location: "Delhi, India",
-    pictureUrl: "https://via.placeholder.com/150/2196F3/FFFFFF?text=AS",
-    contact: "+91-9876543210"
+const storage = {
+  get(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+    catch { return fallback; }
   },
-  {
-    profileId: "p-002",
-    userId: "u-002", 
-    headline: "CSE Student | AI/ML Researcher | Full Stack Developer",
-    location: "New Delhi, India",
-    pictureUrl: "https://via.placeholder.com/150/E91E63/FFFFFF?text=PP",
-    contact: "priya.dev@gmail.com"
-  },
-  {
-    profileId: "p-003",
-    userId: "u-003",
-    headline: "Design Engineer | CAD Expert | Manufacturing Specialist",
-    location: "Gurgaon, Haryana", 
-    pictureUrl: "https://via.placeholder.com/150/4CAF50/FFFFFF?text=RK",
-    contact: "rohit.design@outlook.com"
-  }
-];
-
-var mockPosts = [
-  {
-    postId: "post-001",
-    authorId: "u-001",
-    content: "Just completed my final year project on Solar-powered IoT Weather Monitoring System! The system uses ESP32 to collect weather data and uploads it to cloud dashboard. Excited to present it next week! #IoT #SolarEnergy #Engineering #FinalYear",
-    attachments: ["https://via.placeholder.com/600x400/2196F3/FFFFFF?text=Solar+IoT+Project"],
-    createdAt: "2025-10-15T14:30:00Z",
-    likesCount: 12,
-    commentsCount: 3,
-    likedByUser: false
-  },
-  {
-    postId: "post-002", 
-    authorId: "u-002",
-    content: "Thrilled to share that our AI research paper on 'Enhanced Image Recognition using Transfer Learning' has been accepted at ICML 2025! Thanks to my mentor Dr. Sharma and the amazing research team. Hard work pays off! #AI #MachineLearning #Research #IIT",
-    attachments: [],
-    createdAt: "2025-10-14T09:15:00Z",
-    likesCount: 25,
-    commentsCount: 7,
-    likedByUser: true
-  },
-  {
-    postId: "post-003",
-    authorId: "u-003",
-    content: "Sharing some insights from my experience in automotive design: The key to successful product development is balancing innovation with manufacturability. Always consider the production constraints early in the design phase. #DesignEngineering #Automotive #Manufacturing",
-    attachments: [],
-    createdAt: "2025-10-13T18:45:00Z", 
-    likesCount: 8,
-    commentsCount: 2,
-    likedByUser: false
-  }
-];
-
-var mockComments = [
-  {
-    commentId: "comm-001",
-    postId: "post-001",
-    authorId: "u-002",
-    content: "Amazing project Arjun! The integration of solar power with IoT is brilliant. Would love to see the technical details. Good luck with your presentation!",
-    createdAt: "2025-10-15T15:45:00Z"
-  },
-  {
-    commentId: "comm-002",
-    postId: "post-001",
-    authorId: "u-003", 
-    content: "Great work! Solar-powered systems are the future. Have you considered adding battery backup for cloudy days?",
-    createdAt: "2025-10-15T16:20:00Z"
-  }
-];
-
-// Global State
-var appState = {
-  currentUser: null,
-  currentPage: 'landing',
-  feedPosts: []
+  set(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 };
 
-// Utility Functions
-var utils = {
-  formatTimeAgo: function(dateString) {
-    var date = new Date(dateString);
-    var now = new Date();
-    var diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + 'm ago';
-    if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + 'h ago';
-    return Math.floor(diffInSeconds / 86400) + 'd ago';
-  },
-  
-  escapeHtml: function(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  },
-  
-  showToast: function(message, type) {
-    type = type || 'info';
-    var container = document.getElementById('toast-container');
-    var toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.innerHTML = '<span>' + utils.escapeHtml(message) + '</span><button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; margin-left: auto;">✕</button>';
-    
-    container.appendChild(toast);
-    
-    setTimeout(function() {
-      if (toast.parentElement) {
-        toast.remove();
-      }
-    }, 5000);
-  },
-  
-  showLoading: function() {
-    document.getElementById('loading').classList.remove('hidden');
-  },
-  
-  hideLoading: function() {
-    document.getElementById('loading').classList.add('hidden');
-  }
-};
+const nowIso = () => new Date().toISOString();
 
-// Authentication
-var auth = {
-  handleLogin: function(event) {
-    event.preventDefault();
-    
-    var formData = new FormData(event.target);
-    var email = formData.get('email');
-    
-    // Find user by email
-    var user = mockUsers.find(function(u) {
-      return u.email === email;
-    });
-    
-    if (user) {
-      appState.currentUser = user;
-      auth.updateUserUI(user);
-      utils.showToast('Welcome back!', 'success');
-      router.navigate('feed');
-    } else {
-      utils.showToast('User not found', 'error');
-    }
-  },
-  
-  handleRegister: function(event) {
-    event.preventDefault();
-    
-    var formData = new FormData(event.target);
-    var userData = {
-      userId: 'u-' + Date.now(),
-      name: formData.get('name'),
-      email: formData.get('email'),
-      bio: formData.get('bio') || '',
-      profileId: 'p-' + Date.now()
-    };
-    
-    // Check if email exists
-    var existingUser = mockUsers.find(function(u) {
-      return u.email === userData.email;
-    });
-    
-    if (existingUser) {
-      utils.showToast('Email already exists', 'error');
-      return;
-    }
-    
-    // Create new user and profile
-    mockUsers.push(userData);
-    
-    var profile = {
-      profileId: userData.profileId,
-      userId: userData.userId,
-      headline: 'Student',
-      location: 'India',
-      pictureUrl: 'https://via.placeholder.com/150/2196F3/FFFFFF?text=' + userData.name.split(' ').map(function(n) { return n[0]; }).join(''),
-      contact: userData.email
-    };
-    
-    mockProfiles.push(profile);
-    
-    appState.currentUser = userData;
-    auth.updateUserUI(userData);
-    utils.showToast('Account created successfully!', 'success');
-    router.navigate('feed');
-  },
-  
-  updateUserUI: function(user) {
-    var profile = mockProfiles.find(function(p) {
-      return p.userId === user.userId;
-    });
-    
-    var elements = [
-      'header-name', 'header-avatar', 'composer-avatar', 
-      'comment-avatar', 'sidebar-name', 'sidebar-avatar'
-    ];
-    
-    elements.forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) {
-        if (el.tagName === 'IMG') {
-          el.src = profile ? profile.pictureUrl : 'https://via.placeholder.com/150/2196F3/FFFFFF?text=U';
-          el.alt = user.name;
-        } else {
-          el.textContent = user.name;
-        }
-      }
-    });
-    
-    if (profile) {
-      var sidebarHeadline = document.getElementById('sidebar-headline');
-      if (sidebarHeadline) {
-        sidebarHeadline.textContent = profile.headline;
-      }
-    }
-  },
-  
-  logout: function() {
-    appState.currentUser = null;
-    appState.feedPosts = [];
-    utils.showToast('Logged out successfully', 'info');
-    router.navigate('landing');
-  },
-  
-  isAuthenticated: function() {
-    return appState.currentUser !== null;
-  }
-};
+function escapeHtml(s = "") {
+  return s.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[c]));
+}
 
-// Feed Management
-var feed = {
-  loadFeed: function() {
-    // Get posts with author info
-    var enrichedPosts = mockPosts.map(function(post) {
-      var author = mockUsers.find(function(u) {
-        return u.userId === post.authorId;
-      });
-      var authorProfile = mockProfiles.find(function(p) {
-        return p.userId === post.authorId;
-      });
-      
-      return {
-        postId: post.postId,
-        authorId: post.authorId,
-        content: post.content,
-        attachments: post.attachments,
-        createdAt: post.createdAt,
-        likesCount: post.likesCount,
-        commentsCount: post.commentsCount,
-        likedByUser: post.likedByUser,
-        author: {
-          name: author.name,
-          profile: authorProfile
-        }
-      };
-    });
-    
-    appState.feedPosts = enrichedPosts;
-    feed.renderFeed();
-  },
-  
-  renderFeed: function() {
-    var container = document.getElementById('feed-container');
-    if (!container) return;
-    
-    if (appState.feedPosts.length === 0) {
-      container.innerHTML = '<div class="empty-state"><h3>Welcome to EduConnect!</h3><p>Start connecting with fellow students and share your projects!</p></div>';
-      return;
-    }
-    
-    var feedHtml = '';
-    appState.feedPosts.forEach(function(post) {
-      feedHtml += feed.renderPostCard(post);
-    });
-    
-    container.innerHTML = feedHtml;
-  },
-  
-  renderPostCard: function(post) {
-    var comments = mockComments.filter(function(c) {
-      return c.postId === post.postId;
-    }).slice(0, 2);
-    
-    var postHtml = '<article class="post-card card" data-post-id="' + post.postId + '">';
-    postHtml += '<div class="card__body">';
-    postHtml += '<div class="post-header">';
-    postHtml += '<img src="' + (post.author.profile ? post.author.profile.pictureUrl : 'https://via.placeholder.com/40/2196F3/FFFFFF?text=U') + '" alt="' + utils.escapeHtml(post.author.name) + '" class="avatar">';
-    postHtml += '<div class="post-author-info">';
-    postHtml += '<h4 class="post-author-name">';
-    postHtml += '<a href="#" onclick="router.navigate(\'profile\', \''+post.authorId+'\')">' + utils.escapeHtml(post.author.name) + '</a>';
-    postHtml += '</h4>';
-    postHtml += '<p class="post-author-headline">' + utils.escapeHtml(post.author.profile ? post.author.profile.headline : 'Student') + '</p>';
-    postHtml += '</div>';
-    postHtml += '<span class="post-timestamp">' + utils.formatTimeAgo(post.createdAt) + '</span>';
-    postHtml += '</div>';
-    postHtml += '<div class="post-content">' + utils.escapeHtml(post.content) + '</div>';
-    
-    if (post.attachments.length > 0) {
-      postHtml += '<div class="post-attachment"><img src="' + post.attachments[0] + '" alt="Post attachment" loading="lazy"></div>';
-    }
-    
-    postHtml += '<div class="post-actions">';
-    postHtml += '<button class="post-action ' + (post.likedByUser ? 'liked' : '') + '" onclick="feed.toggleLike(\''+post.postId+'\')" aria-label="' + (post.likedByUser ? 'Unlike' : 'Like') + ' post">';
-    postHtml += '<span>' + (post.likedByUser ? '❤️' : '🤍') + '</span>';
-    postHtml += '<span class="like-count">' + post.likesCount + '</span>';
-    postHtml += '</button>';
-    postHtml += '<button class="post-action" onclick="router.navigate(\'post\', \''+post.postId+'\')" aria-label="View comments">';
-    postHtml += '<span>💬</span><span>' + post.commentsCount + '</span>';
-    postHtml += '</button>';
-    postHtml += '<button class="post-action" onclick="utils.showToast(\'Sharing feature coming soon!\', \'info\')" aria-label="Share post">';
-    postHtml += '<span>🔄</span><span>Share</span>';
-    postHtml += '</button>';
-    postHtml += '</div>';
-    
-    if (comments.length > 0) {
-      postHtml += '<div class="post-comments-preview">';
-      comments.forEach(function(comment) {
-        var commentAuthor = mockUsers.find(function(u) {
-          return u.userId === comment.authorId;
-        });
-        var commentProfile = mockProfiles.find(function(p) {
-          return p.userId === comment.authorId;
-        });
-        
-        postHtml += '<div class="comment-item">';
-        postHtml += '<img src="' + (commentProfile ? commentProfile.pictureUrl : 'https://via.placeholder.com/32/2196F3/FFFFFF?text=U') + '" alt="' + utils.escapeHtml(commentAuthor ? commentAuthor.name : 'User') + '" class="avatar" style="width: 32px; height: 32px;">';
-        postHtml += '<div class="comment-content">';
-        postHtml += '<div class="comment-author">' + utils.escapeHtml(commentAuthor ? commentAuthor.name : 'User') + '</div>';
-        postHtml += '<p class="comment-text">' + utils.escapeHtml(comment.content) + '</p>';
-        postHtml += '</div></div>';
-      });
-      
-      if (mockComments.filter(function(c) { return c.postId === post.postId; }).length > 2) {
-        postHtml += '<button class="view-more-comments" onclick="router.navigate(\'post\', \''+post.postId+'\')">View all comments</button>';
-      }
-      postHtml += '</div>';
-    }
-    
-    postHtml += '</div></article>';
-    return postHtml;
-  },
-  
-  createPost: function() {
-    var contentEl = document.getElementById('post-content');
-    var content = contentEl.value.trim();
-    
-    if (!content) {
-      utils.showToast('Please write something before posting', 'error');
-      return;
-    }
-    
-    if (!appState.currentUser) {
-      utils.showToast('Please login to post', 'error');
-      return;
-    }
-    
-    var newPost = {
-      postId: 'post-' + Date.now(),
-      authorId: appState.currentUser.userId,
-      content: content,
-      attachments: [],
-      createdAt: new Date().toISOString(),
-      likesCount: 0,
-      commentsCount: 0,
-      likedByUser: false
-    };
-    
-    mockPosts.unshift(newPost);
-    contentEl.value = '';
-    
-    feed.loadFeed();
-    utils.showToast('Post shared successfully!', 'success');
-  },
-  
-  toggleLike: function(postId) {
-    if (!auth.isAuthenticated()) {
-      utils.showToast('Please login to like posts', 'error');
-      return;
-    }
-    
-    var post = mockPosts.find(function(p) {
-      return p.postId === postId;
-    });
-    
-    if (post) {
-      if (post.likedByUser) {
-        post.likesCount--;
-        post.likedByUser = false;
-      } else {
-        post.likesCount++;
-        post.likedByUser = true;
-      }
-      
-      // Update UI
-      var postCard = document.querySelector('[data-post-id="' + postId + '"]');
-      if (postCard) {
-        var likeBtn = postCard.querySelector('.post-action');
-        var likeCount = likeBtn.querySelector('.like-count');
-        
-        if (post.likedByUser) {
-          likeBtn.classList.add('liked');
-          likeBtn.querySelector('span').textContent = '❤️';
-        } else {
-          likeBtn.classList.remove('liked');
-          likeBtn.querySelector('span').textContent = '🤍';
-        }
-        
-        likeCount.textContent = post.likesCount;
-      }
-      
-      utils.showToast(post.likedByUser ? 'Liked!' : 'Unliked!', 'success');
-    }
-  },
-  
-  initComposer: function() {
-    var contentEl = document.getElementById('post-content');
-    var submitBtn = document.getElementById('post-submit-btn');
-    
-    if (contentEl && submitBtn) {
-      contentEl.addEventListener('input', function() {
-        submitBtn.disabled = contentEl.value.trim().length === 0;
-      });
-    }
-  }
-};
-
-// Profile Management
-var profile = {
-  loadProfile: function(userId) {
-    var user = mockUsers.find(function(u) {
-      return u.userId === userId;
-    });
-    
-    if (!user) {
-      utils.showToast('User not found', 'error');
-      return;
-    }
-    
-    var userProfile = mockProfiles.find(function(p) {
-      return p.userId === userId;
-    });
-    
-    profile.renderProfile(user, userProfile);
-  },
-  
-  renderProfile: function(user, userProfile) {
-    var isOwnProfile = appState.currentPage === 'me';
-    var prefix = isOwnProfile ? 'me-' : 'profile-';
-    
-    var elements = {
-      avatar: document.getElementById(prefix + 'avatar'),
-      name: document.getElementById(prefix + 'name'),
-      headline: document.getElementById(prefix + 'headline'),
-      location: document.getElementById(prefix + 'location'),
-      contact: document.getElementById(prefix + 'contact'),
-      bio: document.getElementById(prefix + 'bio')
-    };
-    
-    if (elements.avatar && userProfile) elements.avatar.src = userProfile.pictureUrl;
-    if (elements.name) elements.name.textContent = user.name;
-    if (elements.headline && userProfile) elements.headline.textContent = userProfile.headline;
-    if (elements.location && userProfile) elements.location.textContent = '📍 ' + userProfile.location;
-    if (elements.contact && userProfile) elements.contact.textContent = '📧 ' + userProfile.contact;
-    if (elements.bio) elements.bio.textContent = user.bio;
-    
-    // Render placeholder sections
-    profile.renderEducation([], isOwnProfile);
-    profile.renderExperience([], isOwnProfile);
-    profile.renderSkills([], isOwnProfile);
-  },
-  
-  renderEducation: function(educations, isEditable) {
-    var container = document.getElementById(isEditable ? 'me-education' : 'profile-education');
-    if (!container) return;
-    
-    container.innerHTML = '<p class="empty-text">No education information available.</p>';
-  },
-  
-  renderExperience: function(experiences, isEditable) {
-    var container = document.getElementById(isEditable ? 'me-experience' : 'profile-experience');
-    if (!container) return;
-    
-    container.innerHTML = '<p class="empty-text">No work experience available.</p>';
-  },
-  
-  renderSkills: function(skills, isEditable) {
-    var container = document.getElementById(isEditable ? 'me-skills' : 'profile-skills');
-    if (!container) return;
-    
-    container.innerHTML = '<p class="empty-text">No skills listed.</p>';
-  },
-  
-  addEducation: function() {
-    utils.showToast('Education form opening...', 'info');
-  },
-  
-  addExperience: function() {
-    utils.showToast('Experience form opening...', 'info');
-  },
-  
-  addSkill: function() {
-    utils.showToast('Skill form opening...', 'info');
-  }
-};
-
-// Post Details
-var posts = {
-  loadPostDetail: function(postId) {
-    var post = mockPosts.find(function(p) {
-      return p.postId === postId;
-    });
-    
-    if (!post) {
-      utils.showToast('Post not found', 'error');
-      return;
-    }
-    
-    var author = mockUsers.find(function(u) {
-      return u.userId === post.authorId;
-    });
-    
-    var authorProfile = mockProfiles.find(function(p) {
-      return p.userId === post.authorId;
-    });
-    
-    var enrichedPost = {
-      postId: post.postId,
-      authorId: post.authorId,
-      content: post.content,
-      attachments: post.attachments,
-      createdAt: post.createdAt,
-      likesCount: post.likesCount,
-      commentsCount: post.commentsCount,
-      likedByUser: post.likedByUser,
-      author: {
-        name: author.name,
-        profile: authorProfile
-      }
-    };
-    
-    posts.renderPostDetail(enrichedPost);
-    posts.renderComments(postId);
-  },
-  
-  renderPostDetail: function(post) {
-    var container = document.getElementById('post-detail-container');
-    if (!container) return;
-    
-    var postDetailHtml = '<div class="card__body">';
-    postDetailHtml += '<div class="post-header">';
-    postDetailHtml += '<img src="' + (post.author.profile ? post.author.profile.pictureUrl : 'https://via.placeholder.com/40/2196F3/FFFFFF?text=U') + '" alt="' + utils.escapeHtml(post.author.name) + '" class="avatar">';
-    postDetailHtml += '<div class="post-author-info">';
-    postDetailHtml += '<h4 class="post-author-name">' + utils.escapeHtml(post.author.name) + '</h4>';
-    postDetailHtml += '<p class="post-author-headline">' + utils.escapeHtml(post.author.profile ? post.author.profile.headline : 'Student') + '</p>';
-    postDetailHtml += '</div>';
-    postDetailHtml += '<span class="post-timestamp">' + utils.formatTimeAgo(post.createdAt) + '</span>';
-    postDetailHtml += '</div>';
-    postDetailHtml += '<div class="post-content">' + utils.escapeHtml(post.content) + '</div>';
-    
-    if (post.attachments.length > 0) {
-      postDetailHtml += '<div class="post-attachment"><img src="' + post.attachments[0] + '" alt="Post attachment" loading="lazy"></div>';
-    }
-    
-    postDetailHtml += '<div class="post-actions">';
-    postDetailHtml += '<button class="post-action ' + (post.likedByUser ? 'liked' : '') + '" onclick="posts.toggleLike(\''+post.postId+'\')" aria-label="' + (post.likedByUser ? 'Unlike' : 'Like') + ' post">';
-    postDetailHtml += '<span>' + (post.likedByUser ? '❤️' : '🤍') + '</span>';
-    postDetailHtml += '<span class="like-count">' + post.likesCount + '</span>';
-    postDetailHtml += '</button></div></div>';
-    
-    container.innerHTML = postDetailHtml;
-  },
-  
-  renderComments: function(postId) {
-    var container = document.getElementById('comments-list');
-    if (!container) return;
-    
-    var comments = mockComments.filter(function(c) {
-      return c.postId === postId;
-    });
-    
-    if (comments.length === 0) {
-      container.innerHTML = '<p class="empty-text">No comments yet. Be the first to comment!</p>';
-      return;
-    }
-    
-    var commentsHtml = '';
-    comments.forEach(function(comment) {
-      var author = mockUsers.find(function(u) {
-        return u.userId === comment.authorId;
-      });
-      var authorProfile = mockProfiles.find(function(p) {
-        return p.userId === comment.authorId;
-      });
-      
-      commentsHtml += '<div class="comment-item">';
-      commentsHtml += '<img src="' + (authorProfile ? authorProfile.pictureUrl : 'https://via.placeholder.com/40/2196F3/FFFFFF?text=U') + '" alt="' + utils.escapeHtml(author ? author.name : 'User') + '" class="avatar">';
-      commentsHtml += '<div class="comment-content">';
-      commentsHtml += '<div class="comment-author">' + utils.escapeHtml(author ? author.name : 'User') + ' • <span class="comment-timestamp">' + utils.formatTimeAgo(comment.createdAt) + '</span></div>';
-      commentsHtml += '<p class="comment-text">' + utils.escapeHtml(comment.content) + '</p>';
-      commentsHtml += '</div></div>';
-    });
-    
-    container.innerHTML = commentsHtml;
-  },
-  
-  addComment: function(event) {
-    event.preventDefault();
-    
-    if (!auth.isAuthenticated()) {
-      utils.showToast('Please login to comment', 'error');
-      return;
-    }
-    
-    var content = document.getElementById('comment-content').value.trim();
-    if (!content) {
-      utils.showToast('Please write a comment', 'error');
-      return;
-    }
-    
-    var newComment = {
-      commentId: 'comm-' + Date.now(),
-      postId: appState.currentPost,
-      authorId: appState.currentUser.userId,
-      content: content,
-      createdAt: new Date().toISOString()
-    };
-    
-    mockComments.push(newComment);
-    document.getElementById('comment-content').value = '';
-    
-    posts.renderComments(appState.currentPost);
-    utils.showToast('Comment added!', 'success');
-  },
-  
-  toggleLike: function(postId) {
-    return feed.toggleLike(postId);
-  }
-};
-
-// Connections
-var connections = {
-  loadConnections: function() {
-    if (!auth.isAuthenticated()) return;
-    
-    connections.renderConnections([]);
-    connections.renderPendingRequests([]);
-    connections.updateStats(0, 0);
-  },
-  
-  renderConnections: function(connectionsList) {
-    var container = document.getElementById('connections-list');
-    if (!container) return;
-    
-    container.innerHTML = '<p class="empty-text">No connections yet. Start networking!</p>';
-  },
-  
-  renderPendingRequests: function(requests) {
-    var container = document.getElementById('pending-requests');
-    if (!container) return;
-    
-    container.innerHTML = '<p class="empty-text">No pending requests.</p>';
-  },
-  
-  updateStats: function(connectionsCount, pendingCount) {
-    var connectionsCountEl = document.getElementById('connections-count');
-    var pendingCountEl = document.getElementById('pending-count');
-    
-    if (connectionsCountEl) connectionsCountEl.textContent = connectionsCount;
-    if (pendingCountEl) pendingCountEl.textContent = pendingCount;
-  },
-  
-  sendRequest: function(userId) {
-    if (!auth.isAuthenticated()) {
-      utils.showToast('Please login to connect', 'error');
-      return;
-    }
-    
-    utils.showToast('Connection request sent!', 'success');
-  },
-  
-  filterConnections: function(query) {
-    // Placeholder for search functionality
-  }
-};
-
-// Router
-var router = {
-  navigate: function(page, param) {
-    // Hide all pages
-    var pages = document.querySelectorAll('.page');
-    for (var i = 0; i < pages.length; i++) {
-      pages[i].classList.add('hidden');
-    }
-    
-    // Update app state
-    appState.currentPage = page;
-    
-    // Show/hide header based on page
-    var header = document.getElementById('app-header');
-    if (page === 'landing' || page === 'auth') {
-      header.classList.add('hidden');
-    } else {
-      header.classList.remove('hidden');
-    }
-    
-    // Route to appropriate page
-    switch (page) {
-      case 'landing':
-        router.showLanding();
-        break;
-      case 'auth':
-        router.showAuth(param);
-        break;
-      case 'feed':
-        router.showFeed();
-        break;
-      case 'profile':
-        router.showProfile(param);
-        break;
-      case 'me':
-        router.showMe();
-        break;
-      case 'post':
-        router.showPost(param);
-        break;
-      case 'connections':
-        router.showConnections();
-        break;
-      default:
-        router.navigate('landing');
-    }
-  },
-  
-  showLanding: function() {
-    document.getElementById('landing-page').classList.remove('hidden');
-  },
-  
-  showAuth: function(mode) {
-    mode = mode || 'login';
-    document.getElementById('auth-page').classList.remove('hidden');
-    
-    var loginForm = document.getElementById('login-form');
-    var registerForm = document.getElementById('register-form');
-    
-    if (mode === 'register') {
-      loginForm.classList.add('hidden');
-      registerForm.classList.remove('hidden');
-    } else {
-      registerForm.classList.add('hidden');
-      loginForm.classList.remove('hidden');
-    }
-  },
-  
-  showFeed: function() {
-    if (!auth.isAuthenticated()) {
-      router.navigate('landing');
-      return;
-    }
-    
-    document.getElementById('feed-page').classList.remove('hidden');
-    feed.initComposer();
-    feed.loadFeed();
-  },
-  
-  showProfile: function(userId) {
-    if (!userId) {
-      router.navigate('feed');
-      return;
-    }
-    
-    document.getElementById('profile-page').classList.remove('hidden');
-    profile.loadProfile(userId);
-  },
-  
-  showMe: function() {
-    if (!auth.isAuthenticated()) {
-      router.navigate('landing');
-      return;
-    }
-    
-    document.getElementById('me-page').classList.remove('hidden');
-    profile.loadProfile(appState.currentUser.userId);
-  },
-  
-  showPost: function(postId) {
-    if (!postId) {
-      router.navigate('feed');
-      return;
-    }
-    
-    document.getElementById('post-page').classList.remove('hidden');
-    appState.currentPost = postId;
-    posts.loadPostDetail(postId);
-  },
-  
-  showConnections: function() {
-    if (!auth.isAuthenticated()) {
-      router.navigate('landing');
-      return;
-    }
-    
-    document.getElementById('connections-page').classList.remove('hidden');
-    connections.loadConnections();
-  },
-  
-  goBack: function() {
-    router.navigate('feed');
-  }
-};
-
-// Global Functions
-window.router = router;
-window.auth = auth;
-window.feed = feed;
-window.profile = profile;
-window.posts = posts;
-window.connections = connections;
-window.utils = utils;
-
-// Profile dropdown toggle
-window.toggleProfileMenu = function() {
-  var dropdown = document.getElementById('profile-dropdown');
-  dropdown.classList.toggle('hidden');
-};
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  var dropdown = document.getElementById('profile-dropdown');
-  var profileBtn = document.querySelector('.profile-btn');
-  
-  if (dropdown && !dropdown.contains(e.target) && !profileBtn.contains(e.target)) {
-    dropdown.classList.add('hidden');
-  }
-});
-
-// Modal functions
-window.closeModal = function(event) {
-  if (!event || event.target === event.currentTarget) {
-    document.getElementById('modal-container').classList.add('hidden');
-  }
-};
-
-// Simulate upload functions
-window.simulateImageUpload = function() {
-  utils.showToast('Image upload feature coming soon!', 'info');
-};
-
-window.simulateAvatarUpload = function() {
-  utils.showToast('Avatar upload feature coming soon!', 'info');
-};
-
-// App Initialization
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize router
-  router.navigate('landing');
-  
-  // Handle keyboard navigation
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      closeModal();
-      document.getElementById('profile-dropdown').classList.add('hidden');
-    }
+function dataUrlFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
   });
-  
-  console.log('EduConnect app initialized successfully!');
+}
+
+async function hashPassword(plain) {
+  const enc = new TextEncoder().encode(plain);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function timeAgo(iso) {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const pairs = [
+    [31557600, "y"], [2629800, "mo"], [604800, "w"], [86400, "d"], [3600, "h"], [60, "m"]
+  ];
+  for (const [sec, label] of pairs) if (diff >= sec) return Math.floor(diff / sec) + label;
+  return "now";
+}
+
+const toastEl = $id("toast");
+let toastTimer = null;
+const toast = (msg) => {
+  toastEl.textContent = msg;
+  toastEl.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.add("hidden"), 2000);
+};
+
+// ---------- Theme ----------
+const theme = {
+  init() {
+    // Use saved theme, else default to 'light'
+    const saved = storage.get("ng_theme", "light");
+    document.documentElement.setAttribute("data-theme", saved);
+    this.updateToggle(saved);
+  },
+  toggle() {
+    const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", cur);
+    storage.set("ng_theme", cur);
+    this.updateToggle(cur);
+  },
+  updateToggle(mode) {
+    const btn = $id("theme-toggle");
+    if (!btn) return;
+    btn.setAttribute("aria-pressed", mode === "dark");
+    btn.textContent = mode === "dark" ? "🌙 Dark" : "🌞 Light";
+  }
+};
+
+// ---------- State ----------
+let users = storage.get("ng_users", []);
+let posts = storage.get("ng_posts", []);
+let currentUserId = storage.get("ng_currentUserId", null);
+
+// ---------- Router ----------
+const router = {
+  navigate(path) { location.hash = "#" + (path || ""); },
+  handle() {
+    const hash = location.hash.replace(/^#/, "");
+    const [head, sub] = hash.split("/").filter(Boolean);
+    qsa(".page").forEach(p => p.classList.add("hidden"));
+
+    const loggedIn = auth.isAuthed();
+    showHeaderForAuth(loggedIn);
+
+    if (!head || head === "landing") {
+      $id("landing-page").classList.remove("hidden");
+      return;
+    }
+    if (head === "auth") {
+      $id("auth-page").classList.remove("hidden");
+      toggleAuthMode(sub === "register" ? "register" : "login");
+      return;
+    }
+    if (!loggedIn) {
+      toast("Please sign in first."); return router.navigate("auth/login");
+    }
+    if (head === "feed") {
+      $id("feed-page").classList.remove("hidden");
+      feed.renderComposer(); feed.render(); return;
+    }
+    if (head === "me") {
+      $id("me-page").classList.remove("hidden");
+      me.render(); return;
+    }
+    $id("landing-page").classList.remove("hidden");
+  }
+};
+window.addEventListener("hashchange", () => router.handle());
+
+// ---------- Header ----------
+function showHeaderForAuth(isLoggedIn) {
+  $id("auth-cta").classList.toggle("hidden", !!isLoggedIn);
+  $id("app-nav").classList.toggle("hidden", !isLoggedIn);
+  if (isLoggedIn) {
+    const meU = auth.me();
+    if (meU) {
+      $id("chip-name").textContent = meU.name || meU.email;
+      $id("chip-avatar").src = meU.avatar || placeholderAvatar(meU.name);
+    }
+  }
+}
+
+const ui = {
+  toggleProfileMenu(forceClose = false) {
+    const m = $id("profile-menu");
+    if (forceClose) m.classList.add("hidden");
+    else m.classList.toggle("hidden");
+    const close = (e) => {
+      if (!m.contains(e.target) && !e.target.closest(".user-chip")) {
+        m.classList.add("hidden"); document.removeEventListener("click", close);
+      }
+    };
+    document.addEventListener("click", close, { once: true });
+  }
+};
+
+// ---------- Auth ----------
+const auth = {
+  isAuthed: () => !!currentUserId && !!users.find(u => u.id === currentUserId),
+  me() { return users.find(u => u.id === currentUserId) || null; },
+
+  async register({ name, email, password, headline, avatarDataUrl }) {
+    email = email.trim().toLowerCase();
+    if (users.some(u => u.email === email)) throw new Error("Email already registered.");
+    const passHash = await hashPassword(password);
+    const id = "u_" + crypto.randomUUID();
+    const user = {
+      id, name: name.trim(), email,
+      passHash, headline: headline?.trim() || "",
+      bio: "",
+      skills: [],
+      education: [],  // {school, degree, years}
+      experience: [], // {title, company, years}
+      avatar: avatarDataUrl || placeholderAvatar(name),
+      createdAt: nowIso()
+    };
+    users.push(user); storage.set("ng_users", users);
+    currentUserId = id; storage.set("ng_currentUserId", currentUserId);
+    return user;
+  },
+
+  async login({ email, password }) {
+    email = email.trim().toLowerCase();
+    const user = users.find(u => u.email === email);
+    if (!user) throw new Error("No account found for this email.");
+    const passHash = await hashPassword(password);
+    if (user.passHash !== passHash) throw new Error("Incorrect password.");
+    currentUserId = user.id; storage.set("ng_currentUserId", currentUserId);
+    return user;
+  },
+
+  logout() {
+    currentUserId = null; storage.set("ng_currentUserId", currentUserId);
+    showHeaderForAuth(false);
+    router.navigate("landing");
+    toast("Signed out");
+  }
+};
+
+// ---------- Placeholder avatar ----------
+function placeholderAvatar(name = "") {
+  const initials = (name || "?").split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || "?").join("");
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+    <rect width="100%" height="100%" rx="16" ry="16" fill="#0f7a83"/>
+    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+      font-family="Inter, Arial, sans-serif" font-size="56" fill="#ffffff">${initials}</text>
+  </svg>`;
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+}
+
+// ---------- Feed (Posts + Likes + Comments) ----------
+const feed = {
+  composerImages: [],
+
+  resetComposer() {
+    $id("composer-input").value = "";
+    $id("btn-post").disabled = true;
+    this.composerImages = [];
+    $id("composer-previews").innerHTML = "";
+  },
+
+  renderComposer() {
+    const meU = auth.me();
+    $id("composer-avatar").src = meU?.avatar || placeholderAvatar(meU?.name);
+  },
+
+  async handleImagePicked(file) {
+    if (!file) return;
+    const dataUrl = await dataUrlFromFile(file);
+    this.composerImages.push(dataUrl);
+    const wrap = document.createElement("div");
+    wrap.className = "preview";
+    wrap.innerHTML = `<img alt="attachment" src="${dataUrl}"><button class="btn btn--ghost sm" aria-label="Remove image">✕</button>`;
+    $id("composer-previews").appendChild(wrap);
+    const idx = this.composerImages.length - 1;
+    wrap.querySelector("button").addEventListener("click", () => {
+      this.composerImages.splice(idx, 1);
+      wrap.remove();
+      $id("btn-post").disabled = !$id("composer-input").value.trim() && this.composerImages.length === 0;
+    });
+  },
+
+  createPost({ content, images }) {
+    const meU = auth.me();
+    const post = {
+      id: "p_" + crypto.randomUUID(),
+      userId: meU.id,
+      content: content.trim(),
+      images: images.slice(0, 6),
+      createdAt: nowIso(),
+      likes: [],
+      comments: []
+    };
+    posts.unshift(post);
+    storage.set("ng_posts", posts);
+    this.resetComposer();
+    this.render();
+  },
+
+  toggleLike(postId) {
+    const meId = currentUserId;
+    const p = posts.find(x => x.id === postId);
+    if (!p) return;
+    const idx = p.likes.indexOf(meId);
+    if (idx === -1) p.likes.push(meId); else p.likes.splice(idx, 1);
+    storage.set("ng_posts", posts);
+    this.render();
+  },
+
+  addComment(postId, content) {
+    const p = posts.find(x => x.id === postId);
+    if (!p) return;
+    p.comments.push({
+      id: "c_" + crypto.randomUUID(),
+      userId: currentUserId,
+      content: content.trim(),
+      createdAt: nowIso()
+    });
+    storage.set("ng_posts", posts);
+    this.render();
+  },
+
+  deletePost(id) {
+    posts = posts.filter(p => p.id !== id);
+    storage.set("ng_posts", posts);
+    this.render();
+  },
+
+  render() {
+    const list = $id("feed-list");
+    list.innerHTML = "";
+
+    if (!posts.length) {
+      const empty = document.createElement("div");
+      empty.className = "card";
+      empty.innerHTML = `<h3>No posts yet</h3><p class="muted">Be the first to share something.</p>`;
+      list.appendChild(empty);
+      return;
+    }
+
+    for (const p of posts) {
+      const author = users.find(u => u.id === p.userId) || { name: "Deleted", avatar: "", headline: "" };
+      const canDelete = currentUserId === p.userId;
+      const liked = p.likes.includes(currentUserId);
+
+      const el = document.createElement("article");
+      el.className = "post";
+      el.innerHTML = `
+        <div class="post-head">
+          <img class="avatar sm" alt="avatar" src="${author.avatar || placeholderAvatar(author.name)}">
+          <div>
+            <div><strong>${escapeHtml(author.name)}</strong></div>
+            <div class="post-meta">${timeAgo(p.createdAt)} • ${escapeHtml(author.headline || "")}</div>
+          </div>
+          ${canDelete ? `<button class="btn btn--ghost" aria-label="Delete post">Delete</button>` : ""}
+        </div>
+        <div class="post-body">
+          ${p.content ? `<p>${escapeHtml(p.content)}</p>` : ""}
+          ${p.images?.length ? `
+            <div class="previews" style="margin-top:10px">
+              ${p.images.map(src => `<div class="preview"><img alt="post image" src="${src}"></div>`).join("")}
+            </div>` : ""}
+        </div>
+        <div class="counts">${p.likes.length} likes • ${p.comments.length} comments</div>
+        <div class="post-actions">
+          <button class="btn btn--ghost btn-like">${liked ? "Unlike" : "Like"}</button>
+          <button class="btn btn--ghost btn-toggle-comments">Comment</button>
+          <button class="btn btn--ghost" disabled>Share</button>
+        </div>
+        <div class="post-comments hidden">
+          <div class="card" style="border:none; box-shadow:none; padding:8px 14px;">
+            <div id="comments-${p.id}">
+              ${p.comments.map(c => {
+                const u = users.find(x => x.id === c.userId) || {name:"Unknown", avatar:""};
+                return `
+                <div style="display:grid; grid-template-columns:auto 1fr; gap:8px; margin:8px 0;">
+                  <img class="avatar xs" src="${u.avatar || placeholderAvatar(u.name)}" alt="">
+                  <div>
+                    <div><strong>${escapeHtml(u.name)}</strong> <span class="muted">• ${timeAgo(c.createdAt)}</span></div>
+                    <div>${escapeHtml(c.content)}</div>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>
+            <div style="display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; margin-top:8px;">
+              <img class="avatar xs" src="${auth.me()?.avatar || ""}" alt="">
+              <input type="text" class="comment-input" placeholder="Add a comment..." />
+              <button class="btn btn--primary btn-add-comment">Post</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      el.querySelector(".btn-like").addEventListener("click", () => this.toggleLike(p.id));
+      el.querySelector(".btn-toggle-comments").addEventListener("click", () => {
+        el.querySelector(".post-comments").classList.toggle("hidden");
+      });
+      el.querySelector(".btn-add-comment").addEventListener("click", () => {
+        const inp = el.querySelector(".comment-input");
+        const val = inp.value.trim(); if (!val) return;
+        this.addComment(p.id, val);
+      });
+      if (canDelete) {
+        el.querySelector(".post-head .btn")?.addEventListener("click", () => {
+          this.deletePost(p.id); toast("Post deleted");
+        });
+      }
+
+      list.appendChild(el);
+    }
+  }
+};
+
+// ---------- Profile (Me) ----------
+const me = {
+  render() {
+    const u = auth.me(); if (!u) return;
+
+    $id("me-avatar").src = u.avatar || placeholderAvatar(u.name);
+    $id("me-name").textContent = u.name;
+    $id("me-headline").textContent = u.headline || "Add a headline";
+
+    $id("me-name-input").value = u.name;
+    $id("me-headline-input").value = u.headline || "";
+    $id("me-bio-input").value = u.bio || "";
+    $id("me-skills-input").value = (u.skills || []).join(", ");
+
+    const eduList = $id("edu-list"); eduList.innerHTML = "";
+    (u.education || []).forEach((e, idx) => {
+      const li = document.createElement("li");
+      li.innerHTML = `${escapeHtml(e.school)} — ${escapeHtml(e.degree)} (${escapeHtml(e.years)}) <button class="btn btn--ghost sm" aria-label="Remove">✕</button>`;
+      li.querySelector("button").addEventListener("click", () => { this.removeEducation(idx); });
+      eduList.appendChild(li);
+    });
+
+    const expList = $id("exp-list"); expList.innerHTML = "";
+    (u.experience || []).forEach((e, idx) => {
+      const li = document.createElement("li");
+      li.innerHTML = `${escapeHtml(e.title)} @ ${escapeHtml(e.company)} (${escapeHtml(e.years)}) <button class="btn btn--ghost sm" aria-label="Remove">✕</button>`;
+      li.querySelector("button").addEventListener("click", () => { this.removeExperience(idx); });
+      expList.appendChild(li);
+    });
+  },
+
+  async save({ name, headline, bio, skillsString, avatarFile }) {
+    const u = auth.me(); if (!u) return;
+    u.name = name.trim();
+    u.headline = headline.trim();
+    u.bio = bio.trim();
+    u.skills = skillsString.split(",").map(s => s.trim()).filter(Boolean);
+    if (avatarFile) u.avatar = await dataUrlFromFile(avatarFile);
+
+    users = users.map(x => x.id === u.id ? u : x);
+    storage.set("ng_users", users);
+    $id("chip-name").textContent = u.name || u.email;
+    $id("chip-avatar").src = u.avatar || placeholderAvatar(u.name);
+    toast("Profile saved");
+    this.render();
+  },
+
+  addEducation({ school, degree, years }) {
+    const u = auth.me(); if (!u) return;
+    if (!u.education) u.education = [];
+    if (!school && !degree && !years) return;
+    u.education.push({ school: school.trim(), degree: degree.trim(), years: years.trim() });
+    storage.set("ng_users", users);
+    this.render();
+  },
+
+  removeEducation(idx) {
+    const u = auth.me(); if (!u) return;
+    u.education.splice(idx, 1);
+    storage.set("ng_users", users);
+    this.render();
+  },
+
+  addExperience({ title, company, years }) {
+    const u = auth.me(); if (!u) return;
+    if (!u.experience) u.experience = [];
+    if (!title && !company && !years) return;
+    u.experience.push({ title: title.trim(), company: company.trim(), years: years.trim() });
+    storage.set("ng_users", users);
+    this.render();
+  },
+
+  removeExperience(idx) {
+    const u = auth.me(); if (!u) return;
+    u.experience.splice(idx, 1);
+    storage.set("ng_users", users);
+    this.render();
+  }
+};
+
+// ---------- Auth UI wiring ----------
+function toggleAuthMode(mode) {
+  $id("login-form").classList.toggle("hidden", mode === "register");
+  $id("register-form").classList.toggle("hidden", mode !== "register");
+}
+
+$id("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault(); $id("btn-login").disabled = true;
+  try {
+    const email = $id("login-email").value;
+    const password = $id("login-password").value;
+    await auth.login({ email, password });
+    toast("Welcome back!"); router.navigate("feed");
+  } catch (err) { toast(err.message || "Login failed"); }
+  finally { $id("btn-login").disabled = false; }
 });
+
+$id("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault(); $id("btn-register").disabled = true;
+  try {
+    const name = $id("reg-name").value;
+    const email = $id("reg-email").value;
+    const password = $id("reg-password").value;
+    const headline = $id("reg-headline").value;
+    const file = $id("reg-avatar").files?.[0];
+    const avatarDataUrl = file ? await dataUrlFromFile(file) : null;
+
+    await auth.register({ name, email, password, headline, avatarDataUrl });
+    toast("Account created!"); router.navigate("feed");
+  } catch (err) { toast(err.message || "Registration failed"); }
+  finally { $id("btn-register").disabled = false; }
+});
+
+// ---------- Composer wiring ----------
+$id("composer-input").addEventListener("input", (e) => {
+  const hasText = !!e.target.value.trim();
+  $id("btn-post").disabled = !hasText && feed.composerImages.length === 0;
+});
+$id("composer-image").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  await feed.handleImagePicked(file);
+  $id("btn-post").disabled = false;
+  e.target.value = "";
+});
+$id("btn-post").addEventListener("click", () => {
+  const content = $id("composer-input").value;
+  if (!content.trim() && feed.composerImages.length === 0) return;
+  feed.createPost({ content, images: feed.composerImages });
+  toast("Posted!");
+});
+
+// ---------- Profile wiring ----------
+$id("btn-save-profile").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const name = $id("me-name-input").value;
+  const headline = $id("me-headline-input").value;
+  const bio = $id("me-bio-input").value;
+  const file = $id("me-avatar-input").files?.[0] || null;
+  const skillsString = $id("me-skills-input").value;
+  await me.save({ name, headline, bio, skillsString, avatarFile: file });
+});
+
+$id("btn-add-edu").addEventListener("click", (e) => {
+  e.preventDefault();
+  me.addEducation({
+    school: $id("edu-school").value,
+    degree: $id("edu-degree").value,
+    years: $id("edu-years").value
+  });
+  $id("edu-school").value = $id("edu-degree").value = $id("edu-years").value = "";
+});
+$id("btn-add-exp").addEventListener("click", (e) => {
+  e.preventDefault();
+  me.addExperience({
+    title: $id("exp-title").value,
+    company: $id("exp-company").value,
+    years: $id("exp-years").value
+  });
+  $id("exp-title").value = $id("exp-company").value = $id("exp-years").value = "";
+});
+
+// ---------- Initial boot ----------
+(function boot() {
+  theme.init(); // set theme before first paint
+
+  // Seed demo user if nothing exists
+  if (users.length === 0) {
+    (async () => {
+      const passHash = await hashPassword("demo123");
+      const demo = {
+        id: "u_demo",
+        name: "Demo User",
+        email: "demo@netgro.local",
+        passHash,
+        headline: "Aspiring Developer",
+        bio: "This is a demo account.",
+        avatar: placeholderAvatar("Demo User"),
+        skills: ["JavaScript", "HTML", "CSS"],
+        education: [{school:"Example University", degree:"B.Tech CSE", years:"2023–2027"}],
+        experience: [{title:"Intern", company:"Acme", years:"2024"}],
+        createdAt: nowIso()
+      };
+      users.push(demo); storage.set("ng_users", users);
+    })();
+  }
+
+  showHeaderForAuth(!!currentUserId);
+
+  if (!location.hash) router.navigate("landing"); else router.handle();
+  setTimeout(() => router.handle(), 0);
+})();

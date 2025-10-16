@@ -1,660 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NetGRO - Professional Network for Students</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NetGRO — LinkedIn-lite Demo</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <!-- Toast Notifications -->
-    <div id="toast-container" class="toast-container" aria-live="polite"></div>
-
-    <!-- Loading Spinner -->
-    <div id="loading" class="loading hidden">
-        <div class="loading-spinner"></div>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand" role="link" tabindex="0" aria-label="Go to landing"
+         onclick="router.navigate('landing')"
+         onkeydown="if(event.key==='Enter') router.navigate('landing')">
+      <span class="brand-dot"></span> NetGRO
     </div>
 
-    <!-- Header -->
-    <header id="app-header" class="header hidden">
-        <div class="container">
-            <div class="header__content">
-                <div class="header__left">
-                    <h1 class="header__logo">
-                        <a href="#" onclick="router.navigate('feed')">
-                            <span class="logo-icon">🎓</span>
-                            NetGRO
-                        </a>
-                    </h1>
-                    <div class="header__search">
-                        <input 
-                            type="search" 
-                            placeholder="Search people and posts..." 
-                            class="form-control search-input"
-                            id="global-search"
-                            aria-label="Search people and posts"
-                        >
-                    </div>
-                </div>
-                <nav class="header__nav">
-                    <button class="nav-btn" onclick="router.navigate('feed')" aria-label="Feed">
-                        <span class="nav-icon">🏠</span>
-                        <span class="nav-text">Feed</span>
-                    </button>
-                    <button class="nav-btn" onclick="router.navigate('connections')" aria-label="My Network">
-                        <span class="nav-icon">👥</span>
-                        <span class="nav-text">Network</span>
-                    </button>
-                    <button class="nav-btn" onclick="router.navigate('me')" aria-label="Profile">
-                        <span class="nav-icon">👤</span>
-                        <span class="nav-text">Me</span>
-                    </button>
-                    <div class="header__profile">
-                        <button class="profile-btn" onclick="toggleProfileMenu()" aria-label="Account menu">
-                            <img id="header-avatar" src="https://via.placeholder.com/40/2196F3/FFFFFF?text=U" alt="Your avatar" class="avatar">
-                            <span class="profile-name" id="header-name">User</span>
-                            <span class="dropdown-arrow">▼</span>
-                        </button>
-                        <div id="profile-dropdown" class="dropdown-menu hidden">
-                            <button onclick="router.navigate('me')" class="dropdown-item">
-                                <span class="dropdown-icon">👤</span>
-                                View Profile
-                            </button>
-                            <hr class="dropdown-divider">
-                            <button onclick="auth.logout()" class="dropdown-item logout-btn">
-                                <span class="dropdown-icon">🚪</span>
-                                Sign Out
-                            </button>
-                        </div>
-                    </div>
-                </nav>
-            </div>
+    <!-- Before login -->
+    <nav id="auth-cta" class="header-actions">
+      <button class="btn btn--primary" onclick="router.navigate('auth/register')">Join Now</button>
+      <button class="btn btn--ghost" onclick="router.navigate('auth/login')">Sign In</button>
+    </nav>
+
+    <!-- After login -->
+    <nav id="app-nav" class="header-actions hidden">
+      <button class="btn btn--ghost" onclick="router.navigate('feed')">Home</button>
+      <button class="btn btn--ghost" onclick="router.navigate('me')">Me</button>
+      <div class="user-chip" id="user-chip" role="button" tabindex="0" aria-haspopup="menu"
+           onclick="ui.toggleProfileMenu()" onkeydown="if(event.key==='Enter') ui.toggleProfileMenu()">
+        <img id="chip-avatar" class="avatar xs" alt="Your avatar" />
+        <span id="chip-name"></span>
+        <svg width="14" height="14" aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        <div id="profile-menu" class="menu hidden" role="menu" aria-label="Profile menu">
+          <button role="menuitem" class="menu-item" onclick="router.navigate('me'); ui.toggleProfileMenu(true)">Profile</button>
+          <button role="menuitem" class="menu-item" onclick="auth.logout()">Sign Out</button>
         </div>
-    </header>
+      </div>
+    </nav>
 
-    <!-- Main App Content -->
-    <main id="app-content">
-        <!-- Landing Page -->
-        <section id="landing-page" class="page">
-            <div class="landing-hero">
-                <div class="container">
-                    <div class="hero-content">
-                        <h1 class="hero-title">Welcome to NetGRO</h1>
-                        <p class="hero-subtitle">The professional network built for students, by students. Connect with peers, showcase your projects, and build your career.</p>
-                        <div class="hero-actions">
-                            <button class="btn btn--primary btn--lg" onclick="router.navigate('auth', 'register')">
-                                Join Now
-                            </button>
-                            <button class="btn btn--outline btn--lg" onclick="router.navigate('auth', 'login')">
-                                Sign In
-                            </button>
-                        </div>
-                    </div>
-                    <div class="hero-image">
-                        <div class="hero-graphic">
-                            <span class="hero-emoji">🎓📱💡</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="landing-features">
-                <div class="container">
-                    <h2>Why Choose NetGRO?</h2>
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🎯</div>
-                            <h3>Showcase Projects</h3>
-                            <p>Share your academic projects, internships, and achievements with your peer network.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🤝</div>
-                            <h3>Build Network</h3>
-                            <p>Connect with students from top colleges and build meaningful professional relationships.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">💼</div>
-                            <h3>Career Growth</h3>
-                            <p>Get endorsed for skills, find internship opportunities, and accelerate your career.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <!-- Theme toggle (shown always) -->
+    <button id="theme-toggle" class="btn btn--ghost" aria-pressed="false" title="Toggle theme"
+            onclick="theme.toggle()">🌞 Light</button>
+  </header>
 
-        <!-- Authentication Page -->
-        <section id="auth-page" class="page hidden">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <div class="auth-header">
-                        <h1 class="auth-logo">
-                            <span class="logo-icon">🎓</span>
-                            NetGRO
-                        </h1>
-                    </div>
-                    
-                    <!-- Login Form -->
-                    <div id="login-form" class="auth-form">
-                        <h2>Welcome back</h2>
-                        <p class="auth-subtitle">Sign in to your account</p>
-                        <form onsubmit="auth.handleLogin(event)">
-                            <div class="form-group">
-                                <label for="login-email" class="form-label">Email</label>
-                                <input 
-                                    type="email" 
-                                    id="login-email" 
-                                    name="email" 
-                                    class="form-control" 
-                                    required 
-                                    autocomplete="email"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="login-password" class="form-label">Password</label>
-                                <input 
-                                    type="password" 
-                                    id="login-password" 
-                                    name="password" 
-                                    class="form-control" 
-                                    required 
-                                    autocomplete="current-password"
-                                >
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width">
-                                Sign In
-                            </button>
-                        </form>
-                        <p class="auth-switch">
-                            Don't have an account? 
-                            <button onclick="router.navigate('auth', 'register')" class="auth-link">Sign up</button>
-                        </p>
-                    </div>
-                    
-                    <!-- Register Form -->
-                    <div id="register-form" class="auth-form hidden">
-                        <h2>Join NetGRO</h2>
-                        <p class="auth-subtitle">Create your professional profile</p>
-                        <form onsubmit="auth.handleRegister(event)">
-                            <div class="form-group">
-                                <label for="register-name" class="form-label">Full Name</label>
-                                <input 
-                                    type="text" 
-                                    id="register-name" 
-                                    name="name" 
-                                    class="form-control" 
-                                    required 
-                                    autocomplete="name"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="register-email" class="form-label">Email</label>
-                                <input 
-                                    type="email" 
-                                    id="register-email" 
-                                    name="email" 
-                                    class="form-control" 
-                                    required 
-                                    autocomplete="email"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="register-password" class="form-label">Password</label>
-                                <input 
-                                    type="password" 
-                                    id="register-password" 
-                                    name="password" 
-                                    class="form-control" 
-                                    required 
-                                    autocomplete="new-password"
-                                    minlength="8"
-                                >
-                            </div>
-                            <div class="form-group">
-                                <label for="register-bio" class="form-label">Bio (Optional)</label>
-                                <textarea 
-                                    id="register-bio" 
-                                    name="bio" 
-                                    class="form-control" 
-                                    rows="3" 
-                                    placeholder="Tell us about yourself..."
-                                ></textarea>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width">
-                                Create Account
-                            </button>
-                        </form>
-                        <p class="auth-switch">
-                            Already have an account? 
-                            <button onclick="router.navigate('auth', 'login')" class="auth-link">Sign in</button>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Feed Page -->
-        <section id="feed-page" class="page hidden">
-            <div class="container">
-                <div class="feed-layout">
-                    <main class="feed-main">
-                        <!-- Post Composer -->
-                        <div class="post-composer card">
-                            <div class="card__body">
-                                <div class="composer-header">
-                                    <img id="composer-avatar" src="https://via.placeholder.com/40/2196F3/FFFFFF?text=U" alt="Your avatar" class="avatar">
-                                    <textarea 
-                                        id="post-content" 
-                                        placeholder="What's on your mind?" 
-                                        class="composer-textarea"
-                                        rows="3"
-                                        aria-label="Post content"
-                                    ></textarea>
-                                </div>
-                                <div class="composer-actions">
-                                    <div class="composer-options">
-                                        <button class="composer-btn" onclick="simulateImageUpload()" aria-label="Add image">
-                                            <span class="composer-icon">📷</span>
-                                            Photo
-                                        </button>
-                                        <select class="form-control composer-visibility" id="post-visibility" aria-label="Post visibility">
-                                            <option value="public">🌍 Public</option>
-                                            <option value="connections">👥 Connections only</option>
-                                        </select>
-                                    </div>
-                                    <button 
-                                        class="btn btn--primary" 
-                                        onclick="feed.createPost()" 
-                                        id="post-submit-btn"
-                                        disabled
-                                    >
-                                        Post
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Feed Container -->
-                        <div id="feed-container" class="feed-container">
-                            <div class="loading-posts">
-                                <div class="loading-spinner"></div>
-                                <p>Loading your feed...</p>
-                            </div>
-                        </div>
-
-                        <!-- Load More Button -->
-                        <div class="load-more-container">
-                            <button class="btn btn--outline" onclick="feed.loadMorePosts()" id="load-more-btn" style="display: none;">
-                                Load More Posts
-                            </button>
-                        </div>
-                    </main>
-
-                    <!-- Sidebar -->
-                    <aside class="feed-sidebar">
-                        <div class="sidebar-card card">
-                            <div class="card__body">
-                                <h3>Your Profile</h3>
-                                <div class="profile-summary">
-                                    <img id="sidebar-avatar" src="https://via.placeholder.com/60/2196F3/FFFFFF?text=U" alt="Your avatar" class="avatar avatar--lg">
-                                    <div class="profile-info">
-                                        <h4 id="sidebar-name">Your Name</h4>
-                                        <p id="sidebar-headline">Your Headline</p>
-                                        <button class="btn btn--sm btn--outline" onclick="router.navigate('me')">
-                                            View Profile
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sidebar-card card">
-                            <div class="card__body">
-                                <h3>Trending Skills</h3>
-                                <div class="trending-skills">
-                                    <span class="skill-chip">Machine Learning</span>
-                                    <span class="skill-chip">IoT Development</span>
-                                    <span class="skill-chip">Robotics</span>
-                                    <span class="skill-chip">Web Development</span>
-                                    <span class="skill-chip">Data Science</span>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </div>
-        </section>
-
-        <!-- Profile Page -->
-        <section id="profile-page" class="page hidden">
-            <div class="container">
-                <div class="profile-layout">
-                    <div class="profile-header card">
-                        <div class="profile-cover"></div>
-                        <div class="card__body">
-                            <div class="profile-info">
-                                <img id="profile-avatar" src="https://via.placeholder.com/120/2196F3/FFFFFF?text=U" alt="Profile avatar" class="avatar avatar--xl">
-                                <div class="profile-details">
-                                    <h1 id="profile-name">User Name</h1>
-                                    <p id="profile-headline" class="profile-headline">Professional Headline</p>
-                                    <p id="profile-location" class="profile-location">📍 Location</p>
-                                    <p id="profile-contact" class="profile-contact">📧 Contact Info</p>
-                                </div>
-                                <div class="profile-actions">
-                                    <button id="connect-btn" class="btn btn--primary" onclick="connections.sendRequest()">
-                                        Connect
-                                    </button>
-                                    <button class="btn btn--outline">
-                                        Message
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-content">
-                        <div class="profile-main">
-                            <!-- About Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <h2>About</h2>
-                                    <p id="profile-bio">User bio will appear here...</p>
-                                </div>
-                            </div>
-
-                            <!-- Experience Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <h2>Experience</h2>
-                                    <div id="profile-experience" class="experience-list">
-                                        <!-- Experience items will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Education Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <h2>Education</h2>
-                                    <div id="profile-education" class="education-list">
-                                        <!-- Education items will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Skills Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <h2>Skills &amp; Endorsements</h2>
-                                    <div id="profile-skills" class="skills-grid">
-                                        <!-- Skills will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Profile Sidebar -->
-                        <div class="profile-sidebar">
-                            <div class="sidebar-card card">
-                                <div class="card__body">
-                                    <h3>People Also Viewed</h3>
-                                    <div class="suggested-profiles">
-                                        <!-- Suggested connections will appear here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- My Profile (Editable) Page -->
-        <section id="me-page" class="page hidden">
-            <div class="container">
-                <div class="profile-layout">
-                    <!-- Same structure as profile-page but with edit capabilities -->
-                    <div class="profile-header card">
-                        <div class="profile-cover"></div>
-                        <div class="card__body">
-                            <div class="profile-info">
-                                <div class="avatar-upload">
-                                    <img id="me-avatar" src="https://via.placeholder.com/120/2196F3/FFFFFF?text=U" alt="Your avatar" class="avatar avatar--xl">
-                                    <button class="avatar-upload-btn" onclick="simulateAvatarUpload()" aria-label="Change profile picture">
-                                        📷
-                                    </button>
-                                </div>
-                                <div class="profile-details">
-                                    <h1 id="me-name">Your Name</h1>
-                                    <p id="me-headline" class="profile-headline">Your Headline</p>
-                                    <p id="me-location" class="profile-location">📍 Your Location</p>
-                                    <p id="me-contact" class="profile-contact">📧 Your Contact</p>
-                                </div>
-                                <div class="profile-actions">
-                                    <button class="btn btn--primary" onclick="profile.toggleEditMode()">
-                                        <span id="edit-mode-text">Edit Profile</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-content">
-                        <div class="profile-main">
-                            <!-- Editable About Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <div class="section-header">
-                                        <h2>About</h2>
-                                        <button class="btn btn--sm btn--outline" onclick="profile.editAbout()">
-                                            ✏️ Edit
-                                        </button>
-                                    </div>
-                                    <div id="about-display">
-                                        <p id="me-bio">Your bio will appear here...</p>
-                                    </div>
-                                    <div id="about-edit" class="hidden">
-                                        <textarea id="bio-edit" class="form-control" rows="4" placeholder="Tell people about yourself..."></textarea>
-                                        <div class="edit-actions">
-                                            <button class="btn btn--sm btn--primary" onclick="profile.saveAbout()">Save</button>
-                                            <button class="btn btn--sm btn--outline" onclick="profile.cancelAbout()">Cancel</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Editable Experience Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <div class="section-header">
-                                        <h2>Experience</h2>
-                                        <button class="btn btn--sm btn--primary" onclick="profile.addExperience()">
-                                            ➕ Add Experience
-                                        </button>
-                                    </div>
-                                    <div id="me-experience" class="experience-list">
-                                        <!-- Experience items will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Editable Education Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <div class="section-header">
-                                        <h2>Education</h2>
-                                        <button class="btn btn--sm btn--primary" onclick="profile.addEducation()">
-                                            ➕ Add Education
-                                        </button>
-                                    </div>
-                                    <div id="me-education" class="education-list">
-                                        <!-- Education items will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Editable Skills Section -->
-                            <div class="profile-section card">
-                                <div class="card__body">
-                                    <div class="section-header">
-                                        <h2>Skills &amp; Endorsements</h2>
-                                        <button class="btn btn--sm btn--primary" onclick="profile.addSkill()">
-                                            ➕ Add Skill
-                                        </button>
-                                    </div>
-                                    <div id="me-skills" class="skills-grid">
-                                        <!-- Skills will be loaded here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="profile-sidebar">
-                            <div class="sidebar-card card">
-                                <div class="card__body">
-                                    <h3>Profile Strength</h3>
-                                    <div class="profile-strength">
-                                        <div class="strength-meter">
-                                            <div class="strength-bar">
-                                                <div id="strength-progress" class="strength-fill" style="width: 70%"></div>
-                                            </div>
-                                            <span id="strength-text">Intermediate</span>
-                                        </div>
-                                        <p class="strength-tips">Add more skills and experience to improve your profile strength.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Post Detail Page -->
-        <section id="post-page" class="page hidden">
-            <div class="container">
-                <div class="post-detail-layout">
-                    <div class="post-detail-main">
-                        <button class="btn btn--outline btn--sm back-btn" onclick="router.goBack()">
-                            ← Back to Feed
-                        </button>
-                        
-                        <div id="post-detail-container" class="post-detail-card card">
-                            <!-- Post details will be loaded here -->
-                        </div>
-
-                        <div class="comments-section card">
-                            <div class="card__body">
-                                <h3>Comments</h3>
-                                
-                                <!-- Comment Form -->
-                                <form class="comment-form" onsubmit="posts.addComment(event)">
-                                    <div class="comment-input-group">
-                                        <img id="comment-avatar" src="https://via.placeholder.com/40/2196F3/FFFFFF?text=U" alt="Your avatar" class="avatar">
-                                        <textarea 
-                                            id="comment-content" 
-                                            placeholder="Write a comment..." 
-                                            class="form-control comment-textarea" 
-                                            rows="2"
-                                            required
-                                        ></textarea>
-                                        <button type="submit" class="btn btn--primary btn--sm">
-                                            Comment
-                                        </button>
-                                    </div>
-                                </form>
-
-                                <!-- Comments List -->
-                                <div id="comments-list" class="comments-list">
-                                    <!-- Comments will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Connections Page -->
-        <section id="connections-page" class="page hidden">
-            <div class="container">
-                <div class="connections-layout">
-                    <div class="connections-header">
-                        <h1>My Network</h1>
-                        <div class="network-stats">
-                            <div class="stat">
-                                <span class="stat-number" id="connections-count">0</span>
-                                <span class="stat-label">Connections</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-number" id="pending-count">0</span>
-                                <span class="stat-label">Pending</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="connections-content">
-                        <!-- Pending Requests -->
-                        <div class="connections-section card">
-                            <div class="card__body">
-                                <h2>Pending Invitations</h2>
-                                <div id="pending-requests" class="connections-grid">
-                                    <!-- Pending requests will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Current Connections -->
-                        <div class="connections-section card">
-                            <div class="card__body">
-                                <h2>Your Connections</h2>
-                                <div class="connections-search">
-                                    <input 
-                                        type="search" 
-                                        placeholder="Search connections..." 
-                                        class="form-control"
-                                        id="connections-search"
-                                        oninput="connections.filterConnections(this.value)"
-                                    >
-                                </div>
-                                <div id="connections-list" class="connections-grid">
-                                    <!-- Connections will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Suggested Connections -->
-                        <div class="connections-section card">
-                            <div class="card__body">
-                                <h2>People You May Know</h2>
-                                <div id="suggested-connections" class="connections-grid">
-                                    <!-- Suggested connections will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Modal Container -->
-    <div id="modal-container" class="modal-overlay hidden" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="modal-title">Modal Title</h3>
-                <button class="modal-close" onclick="closeModal()" aria-label="Close modal">
-                    ✕
-                </button>
-            </div>
-            <div class="modal-body" id="modal-body">
-                <!-- Modal content will be inserted here -->
-            </div>
+  <main class="container">
+    <!-- LANDING -->
+    <section id="landing-page" class="page">
+      <div class="hero">
+        <h1>Grow your network. Grow your career.</h1>
+        <p>Join NetGRO to connect, post updates, and build your professional presence — all in a lightweight demo.</p>
+        <div class="hero-ctas">
+          <button class="btn btn--primary btn--lg" onclick="router.navigate('auth/register')">Join Now</button>
+          <button class="btn btn--ghost btn--lg" onclick="router.navigate('auth/login')">Sign In</button>
         </div>
-    </div>
+      </div>
+      <div class="cards-grid">
+        <article class="card"><h3>Share updates</h3><p>Post text and images, like and comment.</p></article>
+        <article class="card"><h3>Edit your profile</h3><p>Skills, education, experience — all editable.</p></article>
+        <article class="card"><h3>Local & private</h3><p>All data persists in your browser. No servers.</p></article>
+      </div>
+    </section>
 
-    <!-- Scripts -->
-    <script src="app.js" type="module"></script>
+    <!-- AUTH -->
+    <section id="auth-page" class="page hidden">
+      <div class="auth-panels">
+        <!-- LOGIN -->
+        <form id="login-form" class="panel" autocomplete="on">
+          <h2>Welcome back</h2>
+          <label>Email
+            <input type="email" id="login-email" required placeholder="you@example.com" />
+          </label>
+          <label>Password
+            <input type="password" id="login-password" required placeholder="••••••••" />
+          </label>
+          <button type="submit" class="btn btn--primary" id="btn-login">Sign In</button>
+          <p class="muted sm">No account? <a href="#" onclick="router.navigate('auth/register'); return false;">Join now</a></p>
+        </form>
+
+        <!-- REGISTER -->
+        <form id="register-form" class="panel hidden" autocomplete="on">
+          <h2>Create your account</h2>
+          <label>Full name
+            <input type="text" id="reg-name" required placeholder="Jane Doe" />
+          </label>
+          <label>Email
+            <input type="email" id="reg-email" required placeholder="jane@example.com" />
+          </label>
+          <label>Password
+            <input type="password" id="reg-password" required minlength="6" placeholder="At least 6 characters" />
+          </label>
+          <label>Headline (optional)
+            <input type="text" id="reg-headline" placeholder="Student • Web Developer" />
+          </label>
+          <label>Avatar (optional)
+            <input type="file" id="reg-avatar" accept="image/*" />
+          </label>
+          <button type="submit" class="btn btn--primary" id="btn-register">Join Now</button>
+          <p class="muted sm">Already have an account? <a href="#" onclick="router.navigate('auth/login'); return false;">Sign in</a></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- FEED -->
+    <section id="feed-page" class="page hidden">
+      <div class="composer card">
+        <div class="composer-top">
+          <img id="composer-avatar" class="avatar sm" alt="Your avatar" />
+          <textarea id="composer-input" rows="3" maxlength="800" placeholder="Start a post..."></textarea>
+        </div>
+        <div class="composer-actions">
+          <label class="btn btn--ghost" for="composer-image">Add Image</label>
+          <input id="composer-image" type="file" accept="image/*" class="hidden-input" />
+          <div id="composer-previews" class="previews"></div>
+          <button id="btn-post" class="btn btn--primary" disabled>Post</button>
+        </div>
+      </div>
+
+      <div id="feed-list" class="stack"></div>
+    </section>
+
+    <!-- ME / PROFILE -->
+    <section id="me-page" class="page hidden">
+      <div class="profile card">
+        <div class="profile-header">
+          <img id="me-avatar" class="avatar lg" alt="Your avatar" />
+          <div>
+            <h2 id="me-name"></h2>
+            <p id="me-headline" class="muted"></p>
+          </div>
+        </div>
+        <div class="profile-body">
+          <form id="me-form" class="grid">
+            <label>Full name
+              <input type="text" id="me-name-input" required />
+            </label>
+            <label>Headline
+              <input type="text" id="me-headline-input" />
+            </label>
+            <label>Bio
+              <textarea id="me-bio-input" rows="4" placeholder="Tell the world who you are..."></textarea>
+            </label>
+            <label>Skills (comma-separated)
+              <input type="text" id="me-skills-input" placeholder="JavaScript, React, SQL" />
+            </label>
+            <fieldset class="fieldset">
+              <legend>Education</legend>
+              <div class="grid-2">
+                <input type="text" id="edu-school" placeholder="School/College" />
+                <input type="text" id="edu-degree" placeholder="Degree / Major" />
+                <input type="text" id="edu-years" placeholder="Years (e.g., 2022–2026)" />
+                <button class="btn btn--ghost" id="btn-add-edu">Add</button>
+              </div>
+              <ul id="edu-list" class="chips"></ul>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend>Experience</legend>
+              <div class="grid-2">
+                <input type="text" id="exp-title" placeholder="Title" />
+                <input type="text" id="exp-company" placeholder="Company" />
+                <input type="text" id="exp-years" placeholder="Years (e.g., 2023–2024)" />
+                <button class="btn btn--ghost" id="btn-add-exp">Add</button>
+              </div>
+              <ul id="exp-list" class="chips"></ul>
+            </fieldset>
+            <label>Change avatar
+              <input type="file" id="me-avatar-input" accept="image/*" />
+            </label>
+            <div class="row-end">
+              <button class="btn btn--primary" id="btn-save-profile">Save Profile</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toasts -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
